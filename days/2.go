@@ -14,15 +14,14 @@ import (
 func operate(instructions []int) ([]int, error) {
 	// Operates on an array of instructions
 	for pos := 0; pos < len(instructions); pos += 4 {
-		if instructions[pos] == 99 {
-			return instructions, nil
-		}
-
-		var pos1, pos2, result_pos = instructions[pos+1], instructions[pos+2], instructions[pos+3]
 		if instructions[pos] == 1 {
+			var pos1, pos2, result_pos = instructions[pos+1], instructions[pos+2], instructions[pos+3]
 			instructions[result_pos] = instructions[pos1] + instructions[pos2]
 		} else if instructions[pos] == 2 {
+			var pos1, pos2, result_pos = instructions[pos+1], instructions[pos+2], instructions[pos+3]
 			instructions[result_pos] = instructions[pos1] * instructions[pos2]
+		} else if instructions[pos] == 99 {
+			return instructions, nil
 		} else {
 			return instructions, errors.New("Invalid instruction")
 		}
