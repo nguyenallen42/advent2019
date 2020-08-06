@@ -20,9 +20,8 @@ func convert(instructions []string) []int {
 }
 
 func operate(instructions []int) ([]int, error) {
-	var offset int
+	for pos := 0; pos < len(instructions); {
 
-	for pos := 0; pos < len(instructions); pos += offset {
 		instruction, modes := parseInstruction(instructions[pos])
 		switch instruction {
 		case ADD:
@@ -30,27 +29,65 @@ func operate(instructions []int) ([]int, error) {
 			val2 := getVal(instructions, instructions[pos+2], modes[1])
 			result := instructions[pos+3]
 			instructions[result] = val1 + val2
+			pos += instruction.offset
 		case MULT:
 			val1 := getVal(instructions, instructions[pos+1], modes[0])
 			val2 := getVal(instructions, instructions[pos+2], modes[1])
 			result := instructions[pos+3]
 			instructions[result] = val1 * val2
+			pos += instruction.offset
 		case INPUT:
 			fmt.Print("Input: ")
 			var inputVal int
 			fmt.Scanf("%d", &inputVal)
 			result := instructions[pos+1]
 			instructions[result] = inputVal
+			pos += instruction.offset
 		case OUTPUT:
 			val1 := instructions[pos+1]
 			fmt.Println(instructions[val1])
+			pos += instruction.offset
+		case JUMP_IF_TRUE:
+			val1 := getVal(instructions, instructions[pos+1], modes[0])
+			val2 := getVal(instructions, instructions[pos+2], modes[1])
+			if val1 != 0 {
+				pos = val2
+			} else {
+				pos += instruction.offset
+			}
+		case JUMP_IF_FALSE:
+			val1 := getVal(instructions, instructions[pos+1], modes[0])
+			val2 := getVal(instructions, instructions[pos+2], modes[1])
+			if val1 == 0 {
+				pos = val2
+			} else {
+				pos += instruction.offset
+			}
+		case LESS_THAN:
+			val1 := getVal(instructions, instructions[pos+1], modes[0])
+			val2 := getVal(instructions, instructions[pos+2], modes[1])
+			result := instructions[pos+3]
+			if val1 < val2 {
+				instructions[result] = 1
+			} else {
+				instructions[result] = 0
+			}
+			pos += instruction.offset
+		case EQUAL_TO:
+			val1 := getVal(instructions, instructions[pos+1], modes[0])
+			val2 := getVal(instructions, instructions[pos+2], modes[1])
+			result := instructions[pos+3]
+			if val1 == val2 {
+				instructions[result] = 1
+			} else {
+				instructions[result] = 0
+			}
+			pos += instruction.offset
 		case HALT:
 			return instructions, nil
 		default:
 			return instructions, errors.New("Invalid instruction")
 		}
-
-		offset = instruction.offset
 	}
 	return instructions, nil
 }
@@ -86,6 +123,14 @@ var (
 	INPUT = Instruction{opcode: 3, offset: 2}
 	// Outputs the parameter
 	OUTPUT = Instruction{opcode: 4, offset: 2}
+	// Jumps the instruction pointer to the second paramter if the first parameter is true
+	JUMP_IF_TRUE = Instruction{opcode: 5, offset: 3}
+	// Jumps the instruction pointer to the second paramter if the first parameter is false
+	JUMP_IF_FALSE = Instruction{opcode: 6, offset: 3}
+	// Stores 1 if first parameter is less than second parameter, else 0
+	LESS_THAN = Instruction{opcode: 7, offset: 4}
+	// Stores 1 if first parameter is equal to second parameter, else 0
+	EQUAL_TO = Instruction{opcode: 8, offset: 4}
 	// Halts the program
 	HALT = Instruction{opcode: 99, offset: 1}
 )
@@ -121,6 +166,28 @@ func parseInstruction(instruction int) (Instruction, []int) {
 	case OUTPUT.opcode:
 		return OUTPUT, []int{
 			(instruction / 100) % 10,
+		}
+	case JUMP_IF_TRUE.opcode:
+		return JUMP_IF_TRUE, []int{
+			(instruction / 100) % 10,
+			(instruction / 1000) % 10,
+		}
+	case JUMP_IF_FALSE.opcode:
+		return JUMP_IF_FALSE, []int{
+			(instruction / 100) % 10,
+			(instruction / 1000) % 10,
+		}
+	case LESS_THAN.opcode:
+		return LESS_THAN, []int{
+			(instruction / 100) % 10,
+			(instruction / 1000) % 10,
+			(instruction / 10000) % 10,
+		}
+	case EQUAL_TO.opcode:
+		return EQUAL_TO, []int{
+			(instruction / 100) % 10,
+			(instruction / 1000) % 10,
+			(instruction / 10000) % 10,
 		}
 	case HALT.opcode:
 		return HALT, []int{}
