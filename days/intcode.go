@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -113,7 +114,7 @@ type Instruction struct {
 	offset int
 }
 
-// Valid Instructions
+// Instructions
 var (
 	// Adds two parameters and stores at the third parameter
 	ADD = Instruction{opcode: 1, offset: 4}
@@ -135,6 +136,18 @@ var (
 	HALT = Instruction{opcode: 99, offset: 1}
 )
 
+var validInstructions = []Instruction{
+	ADD,
+	MULT,
+	INPUT,
+	OUTPUT,
+	JUMP_IF_TRUE,
+	JUMP_IF_FALSE,
+	LESS_THAN,
+	EQUAL_TO,
+	HALT,
+}
+
 // Parameter Modes
 const (
 	// Uses the value at the position of the parameter
@@ -145,54 +158,28 @@ const (
 
 func parseInstruction(instruction int) (Instruction, []int) {
 	opcode := instruction % 100
+	modes := []int{}
 
-	switch opcode {
-	case ADD.opcode:
-		return ADD, []int{
-			(instruction / 100) % 10,
-			(instruction / 1000) % 10,
-			(instruction / 10000) % 10,
+	for _, ins := range validInstructions {
+		if ins.opcode == opcode {
+			for i := 1; i < ins.offset; i++ {
+				// For each parameter, the mode to read it is defined in
+				// the 100th place, then the 1000th place, and so on
+				mode := (instruction / int(math.Pow(10, float64(i+1)))) % 10
+				switch mode {
+				case POSITION:
+					modes = append(modes, POSITION)
+				case IMMEDIATE:
+					modes = append(modes, IMMEDIATE)
+				default:
+					panic(errors.New("Undefined mode"))
+				}
+			}
+
+			return ins, modes
 		}
-	case MULT.opcode:
-		return MULT, []int{
-			(instruction / 100) % 10,
-			(instruction / 1000) % 10,
-			(instruction / 10000) % 10,
-		}
-	case INPUT.opcode:
-		return INPUT, []int{
-			(instruction / 100) % 10,
-		}
-	case OUTPUT.opcode:
-		return OUTPUT, []int{
-			(instruction / 100) % 10,
-		}
-	case JUMP_IF_TRUE.opcode:
-		return JUMP_IF_TRUE, []int{
-			(instruction / 100) % 10,
-			(instruction / 1000) % 10,
-		}
-	case JUMP_IF_FALSE.opcode:
-		return JUMP_IF_FALSE, []int{
-			(instruction / 100) % 10,
-			(instruction / 1000) % 10,
-		}
-	case LESS_THAN.opcode:
-		return LESS_THAN, []int{
-			(instruction / 100) % 10,
-			(instruction / 1000) % 10,
-			(instruction / 10000) % 10,
-		}
-	case EQUAL_TO.opcode:
-		return EQUAL_TO, []int{
-			(instruction / 100) % 10,
-			(instruction / 1000) % 10,
-			(instruction / 10000) % 10,
-		}
-	case HALT.opcode:
-		return HALT, []int{}
-	default:
-		fmt.Println("Undefined opcode", opcode)
-		panic(errors.New("Undefined opcode"))
 	}
+
+	fmt.Println("Undefined opcode", opcode)
+	panic(errors.New("Undefined opcode"))
 }
