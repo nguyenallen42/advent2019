@@ -32,7 +32,7 @@ func determineTotalFuel(mass int) int {
 }
 
 func main() {
-	file, err := os.Open("../input/1.input")
+	file, err := os.Open("input/1.input")
 	if err != nil {
 		log.Fatal(err)
 	}

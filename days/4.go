@@ -83,7 +83,7 @@ func validateLargerAdjDigits(candidate int) bool {
 }
 
 func main() {
-	file, err := os.Open("../input/4.input")
+	file, err := os.Open("input/4.input")
 	if err != nil {
 		log.Fatal(err)
 	}

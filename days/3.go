@@ -84,7 +84,7 @@ func processDirection(direction string, origin Point, distance int, grid, overla
 }
 
 func main() {
-	file, err := os.Open("../input/3.input")
+	file, err := os.Open("input/3.input")
 	if err != nil {
 		log.Fatal(err)
 	}

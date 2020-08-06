@@ -2,47 +2,12 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 )
 
-// Part 1
-func operate(instructions []int) ([]int, error) {
-	// Operates on an array of instructions
-	for pos := 0; pos < len(instructions); pos += 4 {
-		if instructions[pos] == 1 {
-			var pos1, pos2, result_pos = instructions[pos+1], instructions[pos+2], instructions[pos+3]
-			instructions[result_pos] = instructions[pos1] + instructions[pos2]
-		} else if instructions[pos] == 2 {
-			var pos1, pos2, result_pos = instructions[pos+1], instructions[pos+2], instructions[pos+3]
-			instructions[result_pos] = instructions[pos1] * instructions[pos2]
-		} else if instructions[pos] == 99 {
-			return instructions, nil
-		} else {
-			return instructions, errors.New("Invalid instruction")
-		}
-	}
-	return instructions, nil
-}
-
-func convert(instructions []string) []int {
-	// Converts instructions from []string to []int, for ease of use
-	var converted_instructions = []int{}
-	for _, i := range instructions {
-		j, err := strconv.Atoi(i)
-		if err != nil {
-			panic(err)
-		}
-		converted_instructions = append(converted_instructions, j)
-	}
-	return converted_instructions
-}
-
-// Part 2
 func explore(instructions []int, expected_output int) (int, int) {
 	/* Explores by:
 	- modifying the instructions using nouns and verbs
@@ -67,7 +32,7 @@ func explore(instructions []int, expected_output int) (int, int) {
 }
 
 func main() {
-	file, err := os.Open("../input/2.input")
+	file, err := os.Open("input/2.input")
 	if err != nil {
 		log.Fatal(err)
 	}
