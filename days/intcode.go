@@ -7,26 +7,6 @@ import (
 	"strconv"
 )
 
-// IntComputer represents a computer that processes IntCode
-type IntComputer struct {
-	// Represents a list of instructions (opcodes) along with data
-	// Note: instructions are mutable
-	instructions []int
-
-	// Represents the instruction position that we're currently processing
-	pos int
-
-	// Represents potential input for the INPUT instruction. After an input
-	// is processed, it is removed from this list
-	input []int
-
-	// Represents output from the OUTPUT instruction
-	output []int
-
-	// Determines if we should run in debug mode (outputing instructions, etc.)
-	debug bool
-}
-
 func convert(instructions []string) []int {
 	// Converts instructions from []string to []int, for ease of use
 	var converted_instructions = []int{}
@@ -40,6 +20,33 @@ func convert(instructions []string) []int {
 	return converted_instructions
 }
 
+const (
+	MAX_DATA = 40000000
+)
+
+// IntComputer represents a computer that processes IntCode
+type IntComputer struct {
+	// Represents a list of instructions (opcodes) along with data
+	// Note: instructions are mutable and can extend further than the original list of instructions
+	instructions []int
+
+	// Represents the instruction position that we're currently processing
+	pos int
+
+	// Represents potential input for the INPUT instruction. After an input
+	// is processed, it is removed from this list
+	input []int
+
+	// Represents output from the OUTPUT instruction
+	output []int
+
+	// Stores the relative base of the computer, used for relative base parameter mode
+	relativeBase int
+
+	// Determines if we should run in debug mode (outputing instructions, etc.)
+	debug bool
+}
+
 // operate runs until certain conditions:
 //  - we encounter a HALT instruction
 //  - we encounter an INPUT instruction when we do not have sufficient input
@@ -48,22 +55,21 @@ func (ic *IntComputer) operate() error {
 	for {
 		instruction, modes := parseInstruction(ic.instructions[ic.pos])
 		if ic.debug {
-			fmt.Printf("Attempting instruction %d at ic.pos %d\n", instruction.opcode, ic.pos)
-			fmt.Println(ic.instructions)
+			fmt.Printf("Attempting instruction %d at pos %d w/ base %d\n", instruction.opcode, ic.pos, ic.relativeBase)
 		}
 
 		switch instruction {
 		case ADD:
-			val1 := ic.getVal(ic.pos+1, modes[0])
-			val2 := ic.getVal(ic.pos+2, modes[1])
-			result := ic.instructions[ic.pos+3]
-			ic.instructions[result] = val1 + val2
+			val1 := ic.instructions[ic.getAddress(ic.pos+1, modes[0])]
+			val2 := ic.instructions[ic.getAddress(ic.pos+2, modes[1])]
+			addr := ic.getAddress(ic.pos+3, modes[2])
+			ic.instructions[addr] = val1 + val2
 			ic.pos += instruction.offset
 		case MULT:
-			val1 := ic.getVal(ic.pos+1, modes[0])
-			val2 := ic.getVal(ic.pos+2, modes[1])
-			result := ic.instructions[ic.pos+3]
-			ic.instructions[result] = val1 * val2
+			val1 := ic.instructions[ic.getAddress(ic.pos+1, modes[0])]
+			val2 := ic.instructions[ic.getAddress(ic.pos+2, modes[1])]
+			addr := ic.getAddress(ic.pos+3, modes[2])
+			ic.instructions[addr] = val1 * val2
 			ic.pos += instruction.offset
 		case INPUT:
 			if ic.debug {
@@ -72,48 +78,51 @@ func (ic *IntComputer) operate() error {
 			if len(ic.input) == 0 {
 				return &inputError{}
 			}
-			result := ic.instructions[ic.pos+1]
-			ic.instructions[result] = ic.input[0]
+			addr := ic.getAddress(ic.pos+1, modes[0])
+			ic.instructions[addr] = ic.input[0]
 			ic.input = ic.input[1:]
 			ic.pos += instruction.offset
 		case OUTPUT:
-			val1 := ic.instructions[ic.pos+1]
-			ic.output = append(ic.output, ic.instructions[val1])
+			val1 := ic.instructions[ic.getAddress(ic.pos+1, modes[0])]
+			ic.output = append(ic.output, val1)
 			ic.pos += instruction.offset
 		case JUMP_IF_TRUE:
-			val1 := ic.getVal(ic.pos+1, modes[0])
-			val2 := ic.getVal(ic.pos+2, modes[1])
+			val1 := ic.instructions[ic.getAddress(ic.pos+1, modes[0])]
+			val2 := ic.instructions[ic.getAddress(ic.pos+2, modes[1])]
 			if val1 != 0 {
 				ic.pos = val2
 			} else {
 				ic.pos += instruction.offset
 			}
 		case JUMP_IF_FALSE:
-			val1 := ic.getVal(ic.pos+1, modes[0])
-			val2 := ic.getVal(ic.pos+2, modes[1])
+			val1 := ic.instructions[ic.getAddress(ic.pos+1, modes[0])]
+			val2 := ic.instructions[ic.getAddress(ic.pos+2, modes[1])]
 			if val1 == 0 {
 				ic.pos = val2
 			} else {
 				ic.pos += instruction.offset
 			}
 		case LESS_THAN:
-			val1 := ic.getVal(ic.pos+1, modes[0])
-			val2 := ic.getVal(ic.pos+2, modes[1])
-			result := ic.instructions[ic.pos+3]
+			val1 := ic.instructions[ic.getAddress(ic.pos+1, modes[0])]
+			val2 := ic.instructions[ic.getAddress(ic.pos+2, modes[1])]
+			addr := ic.getAddress(ic.pos+3, modes[2])
 			if val1 < val2 {
-				ic.instructions[result] = 1
+				ic.instructions[addr] = 1
 			} else {
-				ic.instructions[result] = 0
+				ic.instructions[addr] = 0
 			}
 			ic.pos += instruction.offset
+		case ADJ_REL:
+			ic.relativeBase += ic.instructions[ic.getAddress(ic.pos+1, modes[0])]
+			ic.pos += instruction.offset
 		case EQUAL_TO:
-			val1 := ic.getVal(ic.pos+1, modes[0])
-			val2 := ic.getVal(ic.pos+2, modes[1])
-			result := ic.instructions[ic.pos+3]
+			val1 := ic.instructions[ic.getAddress(ic.pos+1, modes[0])]
+			val2 := ic.instructions[ic.getAddress(ic.pos+2, modes[1])]
+			addr := ic.getAddress(ic.pos+3, modes[2])
 			if val1 == val2 {
-				ic.instructions[result] = 1
+				ic.instructions[addr] = 1
 			} else {
-				ic.instructions[result] = 0
+				ic.instructions[addr] = 0
 			}
 			ic.pos += instruction.offset
 		case HALT:
@@ -124,12 +133,14 @@ func (ic *IntComputer) operate() error {
 	}
 }
 
-func (ic *IntComputer) getVal(pos, mode int) int {
+func (ic *IntComputer) getAddress(pos, mode int) int {
 	switch mode {
 	case POSITION:
-		return ic.instructions[ic.instructions[pos]]
-	case IMMEDIATE:
 		return ic.instructions[pos]
+	case IMMEDIATE:
+		return pos
+	case RELATIVE_BASE:
+		return ic.instructions[pos] + ic.relativeBase
 	default:
 		panic(errors.New("Invalid mode"))
 	}
@@ -162,6 +173,8 @@ var (
 	LESS_THAN = Instruction{opcode: 7, offset: 4}
 	// Stores 1 if first parameter is equal to second parameter, else 0
 	EQUAL_TO = Instruction{opcode: 8, offset: 4}
+	// Adjusts the relative base by its only parameter
+	ADJ_REL = Instruction{opcode: 9, offset: 2}
 	// Halts the program
 	HALT = Instruction{opcode: 99, offset: 1}
 )
@@ -175,6 +188,7 @@ var validInstructions = []Instruction{
 	JUMP_IF_FALSE,
 	LESS_THAN,
 	EQUAL_TO,
+	ADJ_REL,
 	HALT,
 }
 
@@ -184,6 +198,8 @@ const (
 	POSITION = 0
 	// Uses the value of the parameter itself
 	IMMEDIATE = 1
+	// Uses the value at the position of the parameter, offset by the current relativeBase
+	RELATIVE_BASE = 2
 )
 
 func parseInstruction(instruction int) (Instruction, []int) {
@@ -201,6 +217,8 @@ func parseInstruction(instruction int) (Instruction, []int) {
 					modes = append(modes, POSITION)
 				case IMMEDIATE:
 					modes = append(modes, IMMEDIATE)
+				case RELATIVE_BASE:
+					modes = append(modes, RELATIVE_BASE)
 				default:
 					panic(errors.New("Undefined mode"))
 				}

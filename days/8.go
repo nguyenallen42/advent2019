@@ -10,12 +10,12 @@ import (
 )
 
 type Layer struct {
-	id int
+	id     int
 	pixels [][]int
 }
 
 const (
-	WIDTH = 25
+	WIDTH  = 25
 	HEIGHT = 6
 )
 
@@ -25,7 +25,7 @@ func constructLayers(input string) []Layer {
 
 	for i := 0; i < numLayers; i++ {
 		layer := Layer{
-			id: i + 1,
+			id:     i + 1,
 			pixels: [][]int{},
 		}
 		for h := 0; h < HEIGHT; h++ {
@@ -79,7 +79,7 @@ func computeImage(layers []Layer) Layer {
 		pixels[i] = make([]int, WIDTH)
 	}
 	resultLayer := Layer{
-		id: 0,
+		id:     0,
 		pixels: pixels,
 	}
 
