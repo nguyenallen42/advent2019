@@ -54,7 +54,7 @@ func determineMaxSetting(instructions []int) int {
 			copy(tmp, instructions)
 			computer := IntComputer{
 				instructions: tmp,
-				input: []int{setting, output},
+				input:        []int{setting, output},
 			}
 			computer.operate()
 			output = computer.output[0]
@@ -89,7 +89,7 @@ func runFeedbackLoop(instructions, settings []int) int {
 		copy(tmp, instructions)
 		computer := IntComputer{
 			instructions: tmp,
-			input: []int{setting},
+			input:        []int{setting},
 		}
 		computer.operate()
 
@@ -99,7 +99,7 @@ func runFeedbackLoop(instructions, settings []int) int {
 	// Feed the output from the previous computer repeatedly until they all halt
 	output := 0
 	numHalted := 0
-	for i := 0; numHalted < 5; i = (i+1)%5 {
+	for i := 0; numHalted < 5; i = (i + 1) % 5 {
 		computers[i].input = append(computers[i].input, output)
 		err := computers[i].operate()
 		if err == nil {
