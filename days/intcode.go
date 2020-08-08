@@ -7,6 +7,26 @@ import (
 	"strconv"
 )
 
+// IntComputer represents a computer that processes IntCode
+type IntComputer struct {
+	// Represents a list of instructions (opcodes) along with data
+	// Note: instructions are mutable
+	instructions []int
+
+	// Represents the instruction position that we're currently processing
+	pos int
+
+	// Represents potential input for the INPUT instruction. After an input
+	// is processed, it is removed from this list
+	input []int
+
+	// Represents output from the OUTPUT instruction
+	output []int
+
+	// Determines if we should run in debug mode (outputing instructions, etc.)
+	debug bool
+}
+
 func convert(instructions []string) []int {
 	// Converts instructions from []string to []int, for ease of use
 	var converted_instructions = []int{}
@@ -20,89 +40,93 @@ func convert(instructions []string) []int {
 	return converted_instructions
 }
 
-func operate(instructions []int, input ...int) ([]int, error) {
-	inputsIdx := 0
-	outputs := []int{}
+// operate runs until certain conditions:
+//  - we encounter a HALT instruction
+//  - we encounter an INPUT instruction when we do not have sufficient input
+//  - we encounter an unknown opcode
+func (ic *IntComputer) operate() error {
+	for {
+		instruction, modes := parseInstruction(ic.instructions[ic.pos])
+		if ic.debug {
+			fmt.Printf("Attempting instruction %d at ic.pos %d\n", instruction.opcode, ic.pos)
+			fmt.Println(ic.instructions)
+		}
 
-	for pos := 0; pos < len(instructions); {
-		instruction, modes := parseInstruction(instructions[pos])
 		switch instruction {
 		case ADD:
-			val1 := getVal(instructions, instructions[pos+1], modes[0])
-			val2 := getVal(instructions, instructions[pos+2], modes[1])
-			result := instructions[pos+3]
-			instructions[result] = val1 + val2
-			pos += instruction.offset
+			val1 := ic.getVal(ic.pos+1, modes[0])
+			val2 := ic.getVal(ic.pos+2, modes[1])
+			result := ic.instructions[ic.pos+3]
+			ic.instructions[result] = val1 + val2
+			ic.pos += instruction.offset
 		case MULT:
-			val1 := getVal(instructions, instructions[pos+1], modes[0])
-			val2 := getVal(instructions, instructions[pos+2], modes[1])
-			result := instructions[pos+3]
-			instructions[result] = val1 * val2
-			pos += instruction.offset
+			val1 := ic.getVal(ic.pos+1, modes[0])
+			val2 := ic.getVal(ic.pos+2, modes[1])
+			result := ic.instructions[ic.pos+3]
+			ic.instructions[result] = val1 * val2
+			ic.pos += instruction.offset
 		case INPUT:
-			result := instructions[pos+1]
-			instructions[result] = input[inputsIdx]
-			inputsIdx += 1
-			pos += instruction.offset
+			result := ic.instructions[ic.pos+1]
+			ic.instructions[result] = ic.input[0]
+			ic.input = ic.input[1:]
+			ic.pos += instruction.offset
 		case OUTPUT:
-			val1 := instructions[pos+1]
-			outputs = append(outputs, instructions[val1])
-			pos += instruction.offset
+			val1 := ic.instructions[ic.pos+1]
+			ic.output = append(ic.output, ic.instructions[val1])
+			ic.pos += instruction.offset
 		case JUMP_IF_TRUE:
-			val1 := getVal(instructions, instructions[pos+1], modes[0])
-			val2 := getVal(instructions, instructions[pos+2], modes[1])
+			val1 := ic.getVal(ic.pos+1, modes[0])
+			val2 := ic.getVal(ic.pos+2, modes[1])
 			if val1 != 0 {
-				pos = val2
+				ic.pos = val2
 			} else {
-				pos += instruction.offset
+				ic.pos += instruction.offset
 			}
 		case JUMP_IF_FALSE:
-			val1 := getVal(instructions, instructions[pos+1], modes[0])
-			val2 := getVal(instructions, instructions[pos+2], modes[1])
+			val1 := ic.getVal(ic.pos+1, modes[0])
+			val2 := ic.getVal(ic.pos+2, modes[1])
 			if val1 == 0 {
-				pos = val2
+				ic.pos = val2
 			} else {
-				pos += instruction.offset
+				ic.pos += instruction.offset
 			}
 		case LESS_THAN:
-			val1 := getVal(instructions, instructions[pos+1], modes[0])
-			val2 := getVal(instructions, instructions[pos+2], modes[1])
-			result := instructions[pos+3]
+			val1 := ic.getVal(ic.pos+1, modes[0])
+			val2 := ic.getVal(ic.pos+2, modes[1])
+			result := ic.instructions[ic.pos+3]
 			if val1 < val2 {
-				instructions[result] = 1
+				ic.instructions[result] = 1
 			} else {
-				instructions[result] = 0
+				ic.instructions[result] = 0
 			}
-			pos += instruction.offset
+			ic.pos += instruction.offset
 		case EQUAL_TO:
-			val1 := getVal(instructions, instructions[pos+1], modes[0])
-			val2 := getVal(instructions, instructions[pos+2], modes[1])
-			result := instructions[pos+3]
+			val1 := ic.getVal(ic.pos+1, modes[0])
+			val2 := ic.getVal(ic.pos+2, modes[1])
+			result := ic.instructions[ic.pos+3]
 			if val1 == val2 {
-				instructions[result] = 1
+				ic.instructions[result] = 1
 			} else {
-				instructions[result] = 0
+				ic.instructions[result] = 0
 			}
-			pos += instruction.offset
+			ic.pos += instruction.offset
 		case HALT:
-			return outputs, nil
+			return nil
 		default:
-			return outputs, errors.New("Invalid instruction")
+			return errors.New("Invalid instruction")
 		}
 	}
-	return outputs, nil
 }
 
-func getVal(instructions []int, parameter, mode int) int {
+func (ic *IntComputer) getVal(pos, mode int) int {
 	switch mode {
 	case POSITION:
-		return instructions[parameter]
+		return ic.instructions[ic.instructions[pos]]
 	case IMMEDIATE:
-		return parameter
+		return ic.instructions[pos]
 	default:
 		panic(errors.New("Invalid mode"))
 	}
-
 }
 
 type Instruction struct {

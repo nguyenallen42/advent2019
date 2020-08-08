@@ -20,15 +20,23 @@ func main() {
 	instructions := convert(strings.Split(scanner.Text(), ","))
 
 	// Part 1
-	tmp := make([]int, len(instructions))
-	copy(tmp, instructions)
-	output, _ := operate(tmp, 1)
-	fmt.Println(output)
+	tmpInstructions := make([]int, len(instructions))
+	copy(tmpInstructions, instructions)
+	computer := IntComputer{
+		instructions: tmpInstructions,
+		input:        []int{1},
+	}
+	computer.operate()
+	fmt.Println(computer.output)
 
 	// Part 2
-	copy(tmp, instructions)
-	output, _ = operate(instructions, 5)
-	fmt.Println(output)
+	copy(tmpInstructions, instructions)
+	computer = IntComputer{
+		instructions: tmpInstructions,
+		input:        []int{5},
+	}
+	computer.operate()
+	fmt.Println(computer.output)
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)

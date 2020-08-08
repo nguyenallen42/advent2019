@@ -42,16 +42,15 @@ func generatePermutations(arr []int) [][]int {
 	return result
 }
 
+// Part 1
 func determineMaxSetting(instructions []int) int {
 	maxOutput := 0
 
 	for _, settings := range generatePermutations([]int{0, 1, 2, 3, 4}) {
-		tmpInstructions := make([]int, len(instructions))
-		copy(tmpInstructions, instructions)
 		output := 0
 
 		for _, setting := range settings {
-			outputs, _ := operate(tmpInstructions, setting, output)
+			outputs, _ := operate(instructions, setting, output)
 			output = outputs[0]
 		}
 
@@ -59,6 +58,19 @@ func determineMaxSetting(instructions []int) int {
 			maxOutput = output
 		}
 	}
+
+	return maxOutput
+}
+
+// Part 2
+func determineFeedbackLoopSettings(instructions []int) int {
+	maxOutput := 0
+
+	outputs, _ := operate(instructions, 9, 7, 8, 5, 6, 0)
+	fmt.Println("Outputs:", outputs)
+	outputs, _ = operate(instructions, outputs...)
+	fmt.Println("Outputs:", outputs)
+	maxOutput = outputs[0]
 
 	return maxOutput
 }

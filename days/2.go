@@ -20,9 +20,13 @@ func explore(instructions []int, expected_output int) (int, int) {
 			copy(new_instructions, instructions)
 
 			new_instructions[1], new_instructions[2] = noun, verb
-			operate(new_instructions)
 
-			if new_instructions[0] == expected_output {
+			computer := IntComputer{
+				instructions: new_instructions,
+			}
+			computer.operate()
+
+			if computer.instructions[0] == expected_output {
 				fmt.Printf("(noun=%d, verb=%d)\n", noun, verb)
 				return noun, verb
 			}
