@@ -9,7 +9,7 @@ import (
 )
 
 type ObjAndDepth struct {
-	obj string
+	obj   string
 	depth int
 }
 
@@ -19,7 +19,7 @@ func traverse(space map[string][]string) int {
 	total := 0
 	queue := []ObjAndDepth{
 		ObjAndDepth{
-			obj: "COM",
+			obj:   "COM",
 			depth: 0,
 		},
 	}
@@ -38,8 +38,8 @@ func traverse(space map[string][]string) int {
 		total += objAndDepth.depth
 		for _, neighbor := range space[objAndDepth.obj] {
 			queue = append(queue, ObjAndDepth{
-				obj: neighbor,
-				depth: objAndDepth.depth+1,
+				obj:   neighbor,
+				depth: objAndDepth.depth + 1,
 			})
 		}
 	}

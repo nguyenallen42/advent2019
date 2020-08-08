@@ -16,13 +16,13 @@ func explore(instructions []int, expected_output int) (int, int) {
 	*/
 	for noun := 0; noun < 100; noun++ {
 		for verb := 0; verb < 100; verb++ {
-			var new_instructions = make([]int, len(instructions))
+			new_instructions := make([]int, len(instructions))
 			copy(new_instructions, instructions)
 
 			new_instructions[1], new_instructions[2] = noun, verb
-			new_instructions, err := operate(new_instructions)
+			operate(new_instructions)
 
-			if err == nil && new_instructions[0] == expected_output {
+			if new_instructions[0] == expected_output {
 				fmt.Printf("(noun=%d, verb=%d)\n", noun, verb)
 				return noun, verb
 			}

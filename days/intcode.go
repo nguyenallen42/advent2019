@@ -20,9 +20,11 @@ func convert(instructions []string) []int {
 	return converted_instructions
 }
 
-func operate(instructions []int) ([]int, error) {
-	for pos := 0; pos < len(instructions); {
+func operate(instructions []int, input ...int) ([]int, error) {
+	inputsIdx := 0
+	outputs := []int{}
 
+	for pos := 0; pos < len(instructions); {
 		instruction, modes := parseInstruction(instructions[pos])
 		switch instruction {
 		case ADD:
@@ -38,15 +40,13 @@ func operate(instructions []int) ([]int, error) {
 			instructions[result] = val1 * val2
 			pos += instruction.offset
 		case INPUT:
-			fmt.Print("Input: ")
-			var inputVal int
-			fmt.Scanf("%d", &inputVal)
 			result := instructions[pos+1]
-			instructions[result] = inputVal
+			instructions[result] = input[inputsIdx]
+			inputsIdx += 1
 			pos += instruction.offset
 		case OUTPUT:
 			val1 := instructions[pos+1]
-			fmt.Println(instructions[val1])
+			outputs = append(outputs, instructions[val1])
 			pos += instruction.offset
 		case JUMP_IF_TRUE:
 			val1 := getVal(instructions, instructions[pos+1], modes[0])
@@ -85,12 +85,12 @@ func operate(instructions []int) ([]int, error) {
 			}
 			pos += instruction.offset
 		case HALT:
-			return instructions, nil
+			return outputs, nil
 		default:
-			return instructions, errors.New("Invalid instruction")
+			return outputs, errors.New("Invalid instruction")
 		}
 	}
-	return instructions, nil
+	return outputs, nil
 }
 
 func getVal(instructions []int, parameter, mode int) int {

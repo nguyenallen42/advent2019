@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -18,7 +19,16 @@ func main() {
 	scanner.Scan()
 	instructions := convert(strings.Split(scanner.Text(), ","))
 
-	operate(instructions)
+	// Part 1
+	tmp := make([]int, len(instructions))
+	copy(tmp, instructions)
+	output, _ := operate(tmp, 1)
+	fmt.Println(output)
+
+	// Part 2
+	copy(tmp, instructions)
+	output, _ = operate(instructions, 5)
+	fmt.Println(output)
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
