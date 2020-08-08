@@ -66,6 +66,12 @@ func (ic *IntComputer) operate() error {
 			ic.instructions[result] = val1 * val2
 			ic.pos += instruction.offset
 		case INPUT:
+			if ic.debug {
+				fmt.Println("input: ", ic.input)
+			}
+			if len(ic.input) == 0 {
+				return &inputError{}
+			}
 			result := ic.instructions[ic.pos+1]
 			ic.instructions[result] = ic.input[0]
 			ic.input = ic.input[1:]
@@ -206,4 +212,11 @@ func parseInstruction(instruction int) (Instruction, []int) {
 
 	fmt.Println("Undefined opcode", opcode)
 	panic(errors.New("Undefined opcode"))
+}
+
+type inputError struct {
+}
+
+func (e *inputError) Error() string {
+	return "Missing more input"
 }

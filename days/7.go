@@ -50,8 +50,14 @@ func determineMaxSetting(instructions []int) int {
 		output := 0
 
 		for _, setting := range settings {
-			outputs, _ := operate(instructions, setting, output)
-			output = outputs[0]
+			tmp := make([]int, len(instructions))
+			copy(tmp, instructions)
+			computer := IntComputer{
+				instructions: tmp,
+				input: []int{setting, output},
+			}
+			computer.operate()
+			output = computer.output[0]
 		}
 
 		if output > maxOutput {
@@ -63,16 +69,46 @@ func determineMaxSetting(instructions []int) int {
 }
 
 // Part 2
-func determineFeedbackLoopSettings(instructions []int) int {
+func determineSettingsForFeedbackLoop(instructions []int) int {
 	maxOutput := 0
-
-	outputs, _ := operate(instructions, 9, 7, 8, 5, 6, 0)
-	fmt.Println("Outputs:", outputs)
-	outputs, _ = operate(instructions, outputs...)
-	fmt.Println("Outputs:", outputs)
-	maxOutput = outputs[0]
-
+	for _, settings := range generatePermutations([]int{5, 6, 7, 8, 9}) {
+		output := runFeedbackLoop(instructions, settings)
+		if output > maxOutput {
+			maxOutput = output
+		}
+	}
 	return maxOutput
+}
+
+func runFeedbackLoop(instructions, settings []int) int {
+	computers := make([]IntComputer, 5)
+
+	// Initialize computers
+	for i, setting := range settings {
+		tmp := make([]int, len(instructions))
+		copy(tmp, instructions)
+		computer := IntComputer{
+			instructions: tmp,
+			input: []int{setting},
+		}
+		computer.operate()
+
+		computers[i] = computer
+	}
+
+	// Feed the output from the previous computer repeatedly until they all halt
+	output := 0
+	numHalted := 0
+	for i := 0; numHalted < 5; i = (i+1)%5 {
+		computers[i].input = append(computers[i].input, output)
+		err := computers[i].operate()
+		if err == nil {
+			numHalted += 1
+		}
+		output = computers[i].output[len(computers[i].output)-1]
+	}
+
+	return computers[4].output[len(computers[4].output)-1]
 }
 
 func main() {
@@ -90,5 +126,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(determineMaxSetting(instructions))
+	fmt.Println(determineSettingsForFeedbackLoop(instructions))
 }
